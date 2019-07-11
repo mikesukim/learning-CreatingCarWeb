@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<title>MichaelKim's Page</title>
+<body>
+       <h1>Michael Kim's Assignment 7</h1>
+       <form onsubmit="return createCar()">
+        Engine description: <input type="text" id = "engineDescription" name="engineDescription" value="V8"><br>
+        Miles per gallon  : <input type="text" id = "milesPerGallon" name="milesPerGallon" value="20"><br>
+        Max speed         : <input type="text" id = "maxSpeed" name="maxSpeed" value="100"><br>
+        Car description   : <input type="text" id = "carDescription" name="carDescription" value="Mustang"><br>
+        Max fuel capacity : <input type="text" id = "maxFuelCapacity" name="maxFuelCapacity" value="50"><br>
+        <input type="submit" value="Create the car">
+        </form>
+
+        <p id="descriptionSpace"><strong></strong></p></br>
+        <form onsubmit='return driveTheCar()' id = "driveInfoSpace" style="display:none">
+        miles to drive : <input type='text' id = 'milesToDrive' name='milesToDrive' value='1000'><br> 
+        x ratio : <input type='text' id = 'xRatio' name='xRatio' value='1'><br> 
+        y ratio : <input type='text' id = 'yRatio' name='yRatio' value='1'><br>
+        <input type='submit' value='Drive the car'><br> 
+        </form>
+
+        <p id="driveResultSpace"><strong></strong></p></br>
+
+        
+
+        <script>
+                
+                var car;
+                function createCar() {
+
+                        var engineDescription = document.getElementById("engineDescription").value;
+                        var milesPerGallon = document.getElementById("milesPerGallon").value;
+                        var maxSpeed = document.getElementById("maxSpeed").value;
+                        var carDescription = document.getElementById("carDescription").value;
+                        var maxFuelCapacity = document.getElementById("maxFuelCapacity").value;
+                
+                        var engine = new Engine(engineDescription,milesPerGallon,maxSpeed);
+                        car = new Car(carDescription, maxFuelCapacity, engine);
+                        car.fillUp();
+
+                        document.getElementById('descriptionSpace').innerHTML = car.getDescription();
+                        var x = document.getElementById('driveInfoSpace');
+                        x.style.display = "block";
+
+
+                        return false;
+
+                };
+                function driveTheCar(){
+
+                        var distance = document.getElementById("milesToDrive").value;
+                        var xRatio = document.getElementById("xRatio").value;
+                        var yRatio = document.getElementById("yRatio").value;
+
+                        var drivenDistance = car.drive(distance,xRatio,yRatio);
+                        if (drivenDistance < distance){
+                                alert("Ran out of gas after driving " + parseFloat(drivenDistance) + " miles.");
+                                document.getElementById('driveResultSpace').innerHTML = car.getDescription();
+                        }
+                        else{
+                                document.getElementById('driveResultSpace').innerHTML = car.getDescription();
+                        }
+             
+                        return false;
+
+                }
+
+                //GasTank Object 
+                function GasTank(capacityIn){
+                        var capacity = (capacityIn != undefined) ? capacityIn : 0;
+                        var currentLevel = 0;
+                        var that = this;
+
+                        this.getCapacity = function() {
+                                return capacity;
+                        };
+                        this.getLevel = function() {
+                                return currentLevel;
+                        }
+                        this.setLevel = function(levelIn) {
+                                if(levelIn > 0){
+                                        currentLevel = (levelIn > capacity) ? capacity : levelIn;
+                                }
+                                else{
+                                        currentLevel = 0;
+                                }
+                        }
+                }
+                //Engine Object
+                function Engine(engineNameIn, mpgIn, maxSpeedIn) {
+	        
+		        var engineName = (engineNameIn != undefined) ? engineNameIn : "Generic engine";
+		        var mpg = (mpgIn > 0 && mpgIn != undefined ) ? mpgIn : 0;
+		        var maxSpeed = (maxSpeedIn > 0 && maxSpeedIn != undefined) ? maxSpeedIn : 0;	
+                        var that = this;
+                        
+                        this.getEngineName = function() {
+                                return engineName;
+                        }
+                        this.getMpg = function(){
+                                return mpg;
+                        }
+                        this.getMaxSpeed = function(){
+                                return maxSpeed;
+                        }
+                        this.getDescription = function(){
+                                return "" + engineName + " (MPG: " + mpg + ", Max speed: " + maxSpeed + ")" ;
+                        }
+                }
+                //Car Object
+                function Car(carNameIn, gasCapacityIn, engineIn){	
+		        
+                        var carName = (carNameIn != undefined) ? carNameIn : "Generic car";			
+		        var gasTank = (gasCapacityIn > 0 && gasCapacityIn != undefined) ? new GasTank(gasCapacityIn) : new GasTank(0);
+		        var engine = (engineIn != undefined) ? engineIn : new Engine("", 0, 0);
+                        var xCoordinate = 0;
+                        var yCoordinate = 0;
+                        var that = this;
+
+                        this.getDescription = function(){	
+		                //e.g. "Sweet Ride (engine: V6 (MPG: 20, Max speed: 120)), fuel: 0.00/15, location: (0,0)"
+		                return carName + " (engine: " + engine.getDescription() + "), fuel: " + parseFloat(gasTank.getLevel()).toFixed(2) + "/" + gasTank.getCapacity() + ", location: (" + that.getX() + "," + that.getY() + ")";	//(double) fuel	
+                        }
+
+                        this.getX = function() {
+                                return xCoordinate;
+                        }
+
+                        this.getY = function() {
+                                return yCoordinate;
+                        }
+
+                        this.getFuelLevel = function () {
+                                return gasTank.getLevel();
+                        }
+
+                        this.getMPG = function () {
+                                return engine.getMpg();
+                        }
+
+                        this.fillUp = function () {
+                                gasTank.setLevel(gasTank.getCapacity());
+                        }
+
+                        this.getMaxSpeed = function () {
+                                return engine.getMaxSpeed();
+                        }
+
+                        this.drive = function (distance, xRatio, yRatio) {
+                                if (!that.isFuelEnoughFor(distance)) {
+                                        distance = that.setNewAvailableDistance();
+                                }
+
+                                that.setRemainingFuelAfter(distance);
+                                that.setDestinedCoordinateXY(distance, xRatio, yRatio);
+
+                                return distance;
+                        }
+
+                        this.isFuelEnoughFor = function(distance) {
+                                var currentFuelLevel = that.getFuelLevel();
+                                var consumedFuel = that.calculateConsumedFuel(distance);
+
+                                if ((currentFuelLevel - consumedFuel) >= 0) {
+                                        return true;
+                                }
+                                else {
+                                        return false;
+                                }
+                        }
+
+                        this.setRemainingFuelAfter = function(distance) {
+                                var currentFuelLevel = that.getFuelLevel();
+                                var consumedFuel = that.calculateConsumedFuel(distance);
+
+                                gasTank.setLevel(currentFuelLevel - consumedFuel);
+                        }
+
+                        this.setDestinedCoordinateXY = function (distance, xRatio, yRatio) {
+                                var oneRatioValue = that.calculateOneRatioValue(distance, xRatio, yRatio);
+                                var distanceMovedX = that.calculateMovedX(oneRatioValue, xRatio);
+                                var distanceMovedY = that.calculateMovedY(oneRatioValue, yRatio);
+
+                                that.setX((distanceMovedX + that.getX())|0);
+                                that.setY((distanceMovedY + that.getY())|0);
+                        }
+
+                        this.calculateConsumedFuel = function (distance) {
+                                mpg = that.getMPG();
+                                consumedFuel = parseFloat(distance / mpg);
+
+                                return consumedFuel;
+                        }
+
+                        this.setNewAvailableDistance = function () {
+                                newDistance = parseInt((that.getFuelLevel() * that.getMPG()));
+                                return newDistance;
+                        }
+
+                        this.calculateOneRatioValue = function (distance, xRatio, yRatio) {
+                                addedSquaredRatio = Math.pow(xRatio, 2) + Math.pow(yRatio, 2);
+                                squaredDistance = Math.pow(distance, 2);
+                                oneRatioSquearedValue = squaredDistance / addedSquaredRatio;
+                                oneRatioValue = Math.sqrt(oneRatioSquearedValue);
+                                return oneRatioValue;
+                        }
+
+                        this.calculateMovedX = function(oneRatioValue, xRatio) {
+                                return oneRatioValue * xRatio;
+                        }
+
+                        this.calculateMovedY = function (oneRatioValue, yRatio) {
+                                return oneRatioValue * yRatio;
+                        }
+
+                        this.setX = function(coordinateX){
+                                xCoordinate = coordinateX;
+                        }
+
+                        this.setY = function(coordinateY) {
+                                yCoordinate = coordinateY;
+                        }
+
+                }
+
+
+        </script>
+                        
+                        
+</body>
+</html>
